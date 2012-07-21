@@ -6,4 +6,4 @@ before_script:
     - cd smalltalk
     - sudo apt-get install gawk
     - sudo apt-get install libsigsegv-dev
-script: autoreconf -vi && ./configure 
+script: autoreconf -vi && ./configure && make 
