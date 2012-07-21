@@ -3,5 +3,6 @@ compiler:
   - gcc
 # Change this to your needs
 before_script:
+    - git clone git://git.sv.gnu.org/smalltalk.git
     - sudo apt-get install gawk libsigsegv-dev lib64gcc1 libc6-amd64 libc6-dev-amd64
 script: ./build.sh 
