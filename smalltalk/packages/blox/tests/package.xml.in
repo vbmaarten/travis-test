@@ -1,7 +1,0 @@
-<package>
-  <name>Blox</name>
-  <prereq>@BLOX_IMPLEMENTATION@</prereq>
-  <namespace>BLOX</namespace>
-
-  <file>test.st</file>
-</package>

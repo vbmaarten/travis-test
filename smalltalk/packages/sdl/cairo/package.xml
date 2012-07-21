@@ -1,9 +1,0 @@
-<package>
-  <name>CairoSDL</name>
-  <namespace>Cairo</namespace>
-
-  <prereq>LibSDL</prereq>
-  <prereq>Cairo</prereq>
-
-  <filein>CairoSDL.st</filein>
-</package>

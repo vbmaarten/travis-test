@@ -1,8 +1,0 @@
-<package>
-  <name>LibSDL_image</name>
-  <namespace>SDL</namespace>
-
-  <filein>SDL_image.st</filein>
-
-  <library>libSDL_image</library>
-</package>
