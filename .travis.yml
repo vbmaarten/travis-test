@@ -2,4 +2,5 @@ language: c
 compiler:
   - gcc
 # Change this to your needs
-script: echo $PATH
+before_script: cd smalltalk
+script: autoreconf -vi && ./configure && make
