@@ -2,5 +2,7 @@ language: c
 compiler:
   - gcc
 # Change this to your needs
-before_script: cd smalltalk
+before_script:
+    - cd smalltalk
+    - sudo apt-get install gawk
 script: autoreconf -vi && ./configure && make
