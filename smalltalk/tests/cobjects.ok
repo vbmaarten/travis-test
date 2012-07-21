@@ -1,0 +1,165 @@
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is nil
+
+Execution begins...
+returned value is CString new: 1 "<0>"
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'dsa'
+
+Execution begins...
+returned value is CString
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'dsa'
+
+Execution begins...
+returned value is CArray
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'dsa'
+
+Execution begins...
+returned value is 1
+
+Execution begins...
+returned value is nil
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'dsa'
+
+Execution begins...
+returned value is CString
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'dsa'
+
+Execution begins...
+returned value is CString
+
+Execution begins...
+returned value is 'asd'
+
+Execution begins...
+returned value is 'dsa'
+
+Execution begins...
+returned value is 1
+
+Execution begins...
+ error: Invalid argument #int
+returned value is nil
+
+Execution begins...
+abc3def4
+returned value is 9
+
+Execution begins...
+cobjects.st:96: Attempt to pass an instance of String as a ...
+cobjects.st:96: Attempt to pass an instance of String as a ...
+ error: primitive operation failed
+returned value is nil
+
+Execution begins...
+Marli loves Steve!!!
+Marli loves Steve!!!
+Marli loves Steve!!!
+returned value is 3
+
+Execution begins...
+true
+'abcabc'
+'this is a test'
+result = 7.700000
+returned value is true
+
+Execution begins...
+The string is this is a test
+returned value is nil
+
+Execution begins...
+Getting a long long 0x100110012002
+returned value is '17596749520898'
+
+Execution begins...
+returned value is 'this is a test'
+
+Execution begins...
+returned value is StructB
+
+Execution begins...
+returned value is StructB
+
+Execution begins...
+8
+4369
+8738
+ByteArray (0 0 17 17 34 34 51 51 )
+ error: Invalid argument 8: offset out of range
+returned value is nil
+
+Execution begins...
+ error: Invalid argument -1: offset out of range
+returned value is nil
+
+Execution begins...
+ error: Invalid argument 7: offset out of range
+returned value is nil
+
+Execution begins...
+4369
+ error: Invalid argument 8: offset out of range
+returned value is nil
+
+Execution begins...
+returned value is true
+
+Execution begins...
+CInt(0 0 0 0 0 0 0 0 @ 8)
+ error: Invalid argument 8: offset out of range
+returned value is nil
+
+Execution begins...
+ByteArray (0 0 0 0 65 0 0 0 )
+returned value is ByteArray new: 8 "<0>"
+
+Execution begins...
+'abc'
+'abc'
+'def'
+returned value is CPtr new: 1 "<0>"
+
+Execution begins...
+1
+2
+3
+returned value is nil
+
+Execution begins...
+$1
+$2
+$3
+$<0>
+returned value is nil

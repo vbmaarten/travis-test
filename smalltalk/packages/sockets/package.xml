@@ -1,0 +1,27 @@
+<package>
+  <name>Sockets</name>
+  <namespace>Sockets</namespace>
+
+  <prereq>ObjectDumper</prereq>
+
+  <callout>TCPaccept</callout>
+
+  <filein>Buffers.st</filein>
+  <filein>Datagram.st</filein>
+  <filein>SocketAddress.st</filein>
+  <filein>AbstractSocketImpl.st</filein>
+  <filein>IPSocketImpl.st</filein>
+  <filein>IP6SocketImpl.st</filein>
+  <filein>UnixSocketImpl.st</filein>
+  <filein>Sockets.st</filein>
+  <filein>Tests.st</filein>
+  <filein>cfuncs.st</filein>
+  <filein>init.st</filein>
+
+  <test>
+	<sunit>Sockets.SocketTest</sunit>
+	<filein>UnitTest.st</filein>
+  </test>
+
+  <file>ChangeLog</file>
+</package>

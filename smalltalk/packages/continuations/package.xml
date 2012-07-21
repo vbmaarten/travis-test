@@ -1,0 +1,12 @@
+<package>
+  <name>Continuations</name>
+  <test>
+    <sunit>ContinuationTest AmbTest ShiftResetTest</sunit>
+    <filein>Test.st</filein>
+    <filein>AmbTest.st</filein>
+    <filein>ShiftResetTest.st</filein>
+  </test>
+
+  <filein>Amb.st</filein>
+  <filein>ShiftReset.st</filein>
+</package>

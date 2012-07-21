@@ -1,0 +1,16 @@
+<package>
+  <name>ROE</name>
+  <namespace>ROE</namespace>
+
+  <filein>Extensions.st</filein>
+  <filein>Core.st</filein>
+  <filein>Array.st</filein>
+  <filein>SQL.st</filein>
+  <test>
+    <prereq>DBD-SQLite</prereq>
+    <filein>Tests.st</filein>
+    <filein>SQLiteTests.st</filein>
+    <sunit>ROE.RATestMapping ROE.RATestEvaluatorSemantics ROE.RATestSyntax 
+	ROE.RATestSQLiteSemantics</sunit>
+  </test>
+</package>

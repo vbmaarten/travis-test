@@ -1,0 +1,14 @@
+<package>
+  <name>ZLib</name>
+  <filein>ZLibStream.st</filein>
+  <filein>ZLibReadStream.st</filein>
+  <filein>ZLibWriteStream.st</filein>
+
+  <namespace>ZLib</namespace>
+  <module>zlib</module>
+
+  <test>
+   <sunit>ZlibStreamTest</sunit>
+   <filein>zlibtests.st</filein>
+  </test>
+</package>

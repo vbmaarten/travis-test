@@ -1,0 +1,34 @@
+2010-12-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Remove now superfluous <file> tags.
+
+2010-04-06  Paolo Bonzini <bonzini@gnu.org>
+
+	* Complex.st: Add #isExact.
+
+2010-01-01  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Update copyright years.
+
+2009-11-02  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Complex.st: Remove useless override of #raisedTo:.
+
+2009-10-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Complex.st: Fix various #raisedTo: bugs.
+	* complextests.st: Add testcases.
+
+2009-01-12  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Complex.st: Use numerically stable algorithms.  Add Integer>>#sqrt.
+	* complextests.st: Remove test now failing for 1 ulp.
+
+2007-07-17  Paolo Bonzini  <bonzini@gnu.org>
+
+	* complextests.st: New.
+	* Complex.st: Fix bugs.
+
+2007-07-16  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Complex.st: New.

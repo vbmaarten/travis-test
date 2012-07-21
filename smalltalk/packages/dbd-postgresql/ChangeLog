@@ -1,0 +1,75 @@
+2011-10-26  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* Connection.st: Put PQConnection into 'private'.
+	* ResultSet.st: Put PQResultSet into 'private'.
+
+2011-04-23  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Connection.st: Remove finalization after closing.
+
+2011-04-23  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* Connection.st: Release the handle only once.
+
+2011-04-11  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* ResultSet.st: Handle multiple calls to primClear.
+
+2011-04-09  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Statement.st: Move field conversion here...
+	* Connection.st: ... from here.
+
+2011-04-09  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* ResultSet.st: Fix return value for PQcmdTuples.
+
+2011-04-08  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* Statement.st: Implement executeWithAll:
+	* Connection.st: Invoke PQexecParams.
+
+2011-04-08  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* Statement.st: New.
+
+2011-04-07  Holger Hans Peter Freyther  <holger@freyther.de>
+
+	* ColumnInfo.st: Do not attempt to convert a NULL value.
+
+2011-01-26  Stefan Schmiedl  <s@xss.de>
+
+	* Table.st: Take current domain into account.
+
+2010-12-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Remove now superfluous <file> tags.
+
+2010-01-01  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Update copyright years.
+
+2009-11-25  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Load and distribute FieldConverter.st.
+	* FieldConverter.st: Fix pasto.  Reported by Stefan Izota.
+
+2009-08-18  Paolo Bonzini  <bonzini@gnu.org>
+	    Nigel Williams  <nigelw@elder-gods.net>
+
+	* Connection.st: Remove invalid arguments added by the superclass.
+
+2008-02-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Connection.st: Add #primTableAt:ifAbsent:.
+	* Table.st: New.
+	* TableColumnInfo.st: New.
+
+2008-02-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Connection.st: Use Postgres-specific PGFieldConverter.
+	* FieldConverter.st: New.
+
+2007-12-27  Paolo Bonzini  <bonzini@gnu.org>
+
+	* ResultSet.st: Fix missing period.

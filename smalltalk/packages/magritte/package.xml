@@ -1,0 +1,21 @@
+<package>
+  <name>Magritte</name>
+  <namespace>Magritte</namespace>
+
+  <test>
+    <sunit>Magritte.MAAdaptiveModelTest*
+	Magritte.MADescriptionBuilderTest*
+	Magritte.MADynamicObjectTest*
+	Magritte.MAExtensionsTest*
+	Magritte.MAFileModelTest*
+	Magritte.MAObjectTest*
+	Magritte.MATableModelTest*</sunit>
+    <filein>magritte-tests.st</filein>
+  </test>
+
+  <filein>magritte-gst.st</filein>
+  <filein>magritte-model.st</filein>
+
+  <file>PORTING</file>
+  <file>ChangeLog</file>
+</package>

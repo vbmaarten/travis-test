@@ -1,0 +1,6 @@
+<package>
+  <name>VFSAddOns</name>
+  <namespace>VFS</namespace>
+
+  <filein>VFS.st</filein>
+</package>

@@ -1,0 +1,12 @@
+<package>
+  <name>Sport</name>
+  <prereq>Sockets</prereq>
+
+  <test>
+    <sunit>SpDateTimeTest SpErrorTest SpWeakArrayTest SpEnvironmentTest SpStringUtilitiesTest SpSocketBasics SpSocketBasicTests</sunit>
+    <filein>sporttests.st</filein>
+    <filein>sportsocktests.st</filein>
+  </test>
+
+  <filein>sport.st</filein>
+</package>

@@ -1,0 +1,2441 @@
+/******************************** -*- C -*- ****************************
+ *
+ *	Interpreter definitions.
+ *
+ *
+ ***********************************************************************/
+
+/***********************************************************************
+ *
+ * Copyright 2003, 2006, 2008, 2009 Free Software Foundation, Inc.
+ * Written by Steve Byrne and Paolo Bonzini.
+ *
+ * This file is part of GNU Smalltalk.
+ *
+ * GNU Smalltalk is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2, or (at your option) any later 
+ * version.
+ * 
+ * Linking GNU Smalltalk statically or dynamically with other modules is
+ * making a combined work based on GNU Smalltalk.  Thus, the terms and
+ * conditions of the GNU General Public License cover the whole
+ * combination.
+ *
+ * In addition, as a special exception, the Free Software Foundation
+ * give you permission to combine GNU Smalltalk with free software
+ * programs or libraries that are released under the GNU LGPL and with
+ * independent programs running under the GNU Smalltalk virtual machine.
+ *
+ * You may copy and distribute such a system following the terms of the
+ * GNU GPL for GNU Smalltalk and the licenses of the other code
+ * concerned, provided that you include the source code of that other
+ * code when and as the GNU GPL requires distribution of source code.
+ *
+ * Note that people who make modified versions of GNU Smalltalk are not
+ * obligated to grant this special exception for their modified
+ * versions; it is their choice whether to do so.  The GNU General
+ * Public License gives permission to release a modified version without
+ * this exception; this exception also makes it possible to release a
+ * modified version which carries forward this exception.
+ *
+ * GNU Smalltalk is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with
+ * GNU Smalltalk; see the file COPYING.  If not, write to the Free Software
+ * Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  
+ *
+ ***********************************************************************/
+
+/* This has two kinds of declarations:
+   - operations are C code together with the stack effect that it should have;
+     so far, this is used only to avoid specifying pushes and pops, but it
+     might be used to combine the accesses to the stack and do some great
+     optimization of the superoperators.  `break' inside an operation has the
+     nice effect of getting out of it.
+
+     They can have parameters which are specified between the name and the
+     stack effect.  Both the formal parameters, and the stack slots, are
+     guaranteed to be lvalues.
+
+   - tables are, well, dispatching tables for bytecodes expressed in a short,
+     useful syntax.  Inside tables one defines bytecodes, which are sequences
+     of operations which expand the operations and use the input code stream
+     to pass them actual parameters.
+
+  Preprocessor statements are passed through without any change.  */
+
+
+#define SEND_TO_SUPER(sendSelector, sendArgs, methodClass)			\
+  _gst_send_message_internal(sendSelector, sendArgs, _gst_self, methodClass)
+
+#if REG_AVAILABILITY >= 2 && defined(LOCAL_REGS)
+#define RECEIVER_VARIABLE(index)            INSTANCE_VARIABLE (self_cache, index)
+#define METHOD_TEMPORARY(index)             temp_cache[index]
+#define METHOD_LITERAL(index)               lit_cache[index]
+#define STORE_RECEIVER_VARIABLE(index, oop) STORE_INSTANCE_VARIABLE (self_cache, index, oop)
+#define STORE_METHOD_TEMPORARY(index, oop)  temp_cache[index] = (oop)
+#define STORE_METHOD_LITERAL(index, oop)    lit_cache[index] = (oop)
+#else
+#define RECEIVER_VARIABLE(index)            INSTANCE_VARIABLE (_gst_self, index)
+#define METHOD_TEMPORARY(index)             _gst_temporaries[index]
+#define METHOD_LITERAL(index)               _gst_literals[index]
+#define STORE_RECEIVER_VARIABLE(index, oop) STORE_INSTANCE_VARIABLE (_gst_self, index, oop)
+#define STORE_METHOD_TEMPORARY(index, oop)  _gst_temporaries[index] = (oop)
+#define STORE_METHOD_LITERAL(index, oop)    _gst_literals[index] = (oop)
+#endif
+
+#ifndef OPEN_CODE_MATH
+
+#define RAW_INT_OP(op, op1, op2, iop)
+#define RAW_FLOATD_OP(op, op1, op2, fop)
+#define INTERP_BASIC_OP(op, op1, op2, iop, fop)
+#define INTERP_BASIC_BOOL(op, op1, op2, operator)
+
+#else
+
+#define RAW_INT_OP(op, op1, op2, iop)                           \
+{                                                               \
+  mst_Boolean overflow;                                         \
+  OOP result = iop;                                             \
+  if(COMMON (!overflow)) {                                      \
+    op = result;                                                \
+    break;                                                      \
+  }                                                             \
+}
+
+#define RAW_FLOATD_OP(op, op1, op2, fop)                        \
+{                                                               \
+  double farg1, farg2;                                          \
+  farg1 = IS_INT (op1) ? TO_INT (op1) : FLOATD_OOP_VALUE(op1);  \
+  farg2 = IS_INT (op2) ? TO_INT (op2) : FLOATD_OOP_VALUE(op2);  \
+  EXPORT_REGS();                                                \
+  op = floatd_new(fop);                                         \
+  IMPORT_REGS();                                                \
+  break;                                                        \
+}
+
+#define INTERP_BASIC_OP(op, op1, op2, iop, fop) {               \
+  if COMMON (ARE_INTS(op1, op2)) {                              \
+    RAW_INT_OP(op, op1, op2, iop);                              \
+  } else if COMMON ((IS_INT (op1) || OOP_CLASS(op1) == _gst_floatd_class)     \
+                    && (IS_INT (op2) || OOP_CLASS(op2) == _gst_floatd_class)) \
+    RAW_FLOATD_OP(op, op1, op2, fop);                           \
+}
+
+#define INTERP_BASIC_BOOL(op, op1, op2, operator) {             \
+  if COMMON (ARE_INTS(op1, op2)) {                              \
+    POP_N_OOPS (2);						\
+    if (((intptr_t) op1) operator ((intptr_t) op2))		\
+      DISPATCH(true_byte_codes);				\
+    else							\
+      DISPATCH(false_byte_codes);				\
+  } else if COMMON ((IS_INT (op1) || OOP_CLASS(op1) == _gst_floatd_class)       \
+                    && (IS_INT (op2) || OOP_CLASS(op2) == _gst_floatd_class)) { \
+    double farg1 = IS_INT (op1) ? TO_INT (op1) : FLOATD_OOP_VALUE(op1);	     \
+    double farg2 = IS_INT (op2) ? TO_INT (op2) : FLOATD_OOP_VALUE(op2);	     \
+    POP_N_OOPS (2);						\
+    if (farg1 operator farg2)					\
+      DISPATCH(true_byte_codes);				\
+    else							\
+      DISPATCH(false_byte_codes);				\
+  }                                                             \
+}
+#endif
+
+/* FETCH loads the whole queue.
+   FETCH_VEC does the same, but uses the given vector to execute the next
+   bytecode.
+   DISPATCH keeps the current queue and dispatches the next bytecode to its
+   execution routine.
+   PREFETCH prepares to execute the next bytecode, including advancing ip.
+   PREFETCH_VEC does the same, but uses the given vector to execute the next
+   bytecode.
+   NEXT_BC assumes that the next bytecode was prefetched, loads its argument
+   and dispatches it to the current dispatch vector.
+   NEXT_BC_VEC assumes that the next bytecode was prefetched with PREFETCH_VEC,
+   loads its argument and dispatches it to the current dispatch vector.
+   NEXT_BC_NO_ARG does the same, and avoids loading the argument for the next
+   bytecode.
+   GET_ARG holds a pointer to the (possibly prefetched) argument of the next
+   bytecode.  */
+#ifdef PIPELINING
+#define FETCH                  goto *(t = dispatch_vec[*ip], b2 = ip[2], b4 = ip[4], \
+                                      arg = ip[1], arg2 = ip[3], t2 = dispatch_vec[b2], t)
+#define FETCH_VEC(v)           goto *(t = (v)[*ip], b2 = ip[2], b4 = ip[4], \
+                                      arg = ip[1], arg2 = ip[3], t2 = dispatch_vec[b2], t)
+
+#define PREFETCH	       (t = t2, t2 = dispatch_vec[b4], \
+				arg2 = ip[3], b2 = b4, b4 = ip[6], \
+				ip += 2)
+#define PREFETCH_VEC(v)	       (t = (v)[b2], t2 = dispatch_vec[b4], \
+				arg2 = ip[3], b2 = b4, b4 = ip[6], \
+				ip += 2)
+
+#define NEXT_BC			goto *(arg = GET_ARG, t)
+#define NEXT_BC_VEC(v)		goto *(arg = GET_ARG, t)
+#define NEXT_BC_NO_ARG(v)	goto *t
+#define GET_ARG			arg2
+
+#elif REG_AVAILABILITY >= 1
+#define FETCH                   goto *(arg = GET_ARG, dispatch_vec[*ip])
+#define FETCH_VEC(v)            goto *(arg = GET_ARG, (v)[*ip])
+#define PREFETCH		(ip += 2, prefetch = dispatch_vec[*ip])
+#define PREFETCH_VEC(v) 	(ip += 2, prefetch = (v)[*ip])
+#define NEXT_BC			goto *(arg = GET_ARG, prefetch)
+#define NEXT_BC_VEC(v)		goto *(arg = GET_ARG, prefetch)
+#define NEXT_BC_NO_ARG(v)	goto *prefetch
+#define GET_ARG			(ip[1])
+
+#else
+#define FETCH                   NEXT_BC
+#define FETCH_VEC(v)            NEXT_BC_VEC(v)
+#define PREFETCH		(ip += 2)
+#define PREFETCH_VEC(v)		(ip += 2)
+#define NEXT_BC			goto *(arg = GET_ARG, dispatch_vec[*ip])
+#define NEXT_BC_VEC(v)		goto *(arg = GET_ARG, (v)[*ip])
+#define NEXT_BC_NO_ARG(v)	goto *(v)[*ip]
+#define GET_ARG			(ip[1])
+#endif
+
+#define DISPATCH(v)		goto *(arg = GET_ARG, (v)[*ip])
+
+operation PREFETCH ( -- ) {
+  PREFETCH;
+  LOCAL_COUNTER++;
+}
+
+operation ADVANCE ( -- ) {
+  ip += 2;
+  LOCAL_COUNTER++;
+}
+
+/* EXT_BYTE extends the argument of the next bytecode; it includes a
+   separate prefetching routine which avoids interrupts (because the
+   two are effectively a single bytecode).  */
+operation EXT_BYTE ( -- ) {
+  PREFETCH_VEC (normal_byte_codes);
+  arg = (arg << 8) | GET_ARG;
+  NEXT_BC_NO_ARG (normal_byte_codes);
+}
+
+operation INVALID arg ( -- ) {
+  _gst_errorf ("Invalid bytecode %d(%d) found!", ip[-1], arg);
+}
+
+operation PLUS_SPECIAL ( op1 op2 -- op ) {
+  INTERP_BASIC_OP (op, op1, op2,
+                   add_with_check (op1, op2, &overflow),
+                   farg1 + farg2);
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[PLUS_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation MINUS_SPECIAL ( op1 op2 -- op ) {
+  INTERP_BASIC_OP (op, op1, op2,
+                   sub_with_check (op1, op2, &overflow),
+                   farg1 - farg2);
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[MINUS_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation LESS_THAN_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  INTERP_BASIC_BOOL (op, op1, op2, <);
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[LESS_THAN_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation GREATER_THAN_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  INTERP_BASIC_BOOL (op, op1, op2, >);
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[GREATER_THAN_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation LESS_EQUAL_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  INTERP_BASIC_BOOL (op, op1, op2, <=);
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[LESS_EQUAL_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation GREATER_EQUAL_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  INTERP_BASIC_BOOL (op, op1, op2, >=);
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[GREATER_EQUAL_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation EQUAL_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  INTERP_BASIC_BOOL (op, op1, op2, ==);
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[EQUAL_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation NOT_EQUAL_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  INTERP_BASIC_BOOL (op, op1, op2, !=);
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[NOT_EQUAL_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation TIMES_SPECIAL ( op1 op2 -- op ) {
+  INTERP_BASIC_OP (op, op1, op2,
+                   mul_with_check (op1, op2, &overflow),
+                   farg1 * farg2);
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[TIMES_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation DIVIDE_SPECIAL ( op1 op2 -- op ) {
+  if COMMON (!ARE_INTS (op1, op2)
+	     && (IS_INT (op1) || OOP_CLASS(op1) == _gst_floatd_class)
+             && (IS_INT (op2) || OOP_CLASS(op2) == _gst_floatd_class))
+    {
+      RAW_FLOATD_OP(op, op1, op2, farg1 / farg2);
+    }
+
+  PREPARE_STACK ();
+  EXPORT_REGS();
+  if (COMMON (ARE_INTS (op1, op2)))
+    {
+      if (!VMpr_SmallInteger_divide (10, 1))
+	{
+	  IMPORT_REGS ();
+	  NEXT_BC;
+	}
+    }
+
+  SEND_MESSAGE (_gst_builtin_selectors[DIVIDE_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation REMAINDER_SPECIAL ( op1 op2 -- op ) {
+  PREPARE_STACK ();
+  EXPORT_REGS();
+  if (IS_INT (op1) && IS_INT (op2)
+      && !VMpr_SmallInteger_modulo (11, 1))
+    {
+      IMPORT_REGS ();
+      NEXT_BC;
+    }
+
+  SEND_MESSAGE (_gst_builtin_selectors[REMAINDER_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation BIT_XOR_SPECIAL ( op1 op2 -- op ) {
+  if COMMON (ARE_INTS (op1, op2))
+    {
+      op = tagged_xor (op1, op2);
+      break;
+    }
+
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[BIT_XOR_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation BIT_SHIFT_SPECIAL ( op1 op2 -- op ) {
+  if COMMON (IS_INT (op2) && IS_INT (op1))
+    {
+      intptr_t iarg1, iarg2;
+      iarg1 = TO_INT (op1);
+      iarg2 = TO_INT (op2);
+      if (iarg2 < 0)
+        {
+          if COMMON (iarg2 >= -ST_INT_SIZE)
+            op = FROM_INT (iarg1 >> -iarg2);
+	  else
+            op = FROM_INT (iarg1 >> ST_INT_SIZE);
+
+          break;
+        }
+      else if COMMON (iarg2 < ST_INT_SIZE)
+        {
+          intptr_t result = iarg1 << iarg2;
+          if COMMON ((result >> iarg2) == iarg1 && !INT_OVERFLOW(result))
+            {
+              op = FROM_INT (result);
+              break;
+            }
+        }
+    }
+
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[BIT_SHIFT_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation INTEGER_DIVIDE_SPECIAL ( op1 op2 -- op1 op2 ) {
+  PREPARE_STACK ();
+  EXPORT_REGS();
+  if (IS_INT (op1) && IS_INT (op2)
+      && !VMpr_SmallInteger_intDiv (12, 1))
+    {
+      IMPORT_REGS ();
+      NEXT_BC;
+    }
+
+  SEND_MESSAGE (_gst_builtin_selectors[INTEGER_DIVIDE_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation BIT_AND_SPECIAL ( op1 op2 -- op ) {
+  op = tagged_and (op1, op2);
+  if COMMON (IS_INT (op))
+    break;
+
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[BIT_AND_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation BIT_OR_SPECIAL ( op1 op2 -- op ) {
+  if COMMON (ARE_INTS (op1, op2))
+    {
+      op = tagged_or (op1, op2);
+      break;
+    }
+
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[BIT_OR_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation AT_SPECIAL ( rec idx -- val ) {
+  OOP classOOP;
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  if UNCOMMON (IS_INT (rec))
+    {
+      SEND_MESSAGE (_gst_builtin_selectors[AT_SPECIAL].symbol, 1);
+      IMPORT_REGS ();
+      FETCH;
+    }
+
+  if COMMON (at_cache_class == (classOOP = OOP_CLASS (rec))
+             && !cached_index_oop_primitive (rec, idx, at_cache_spec))
+    {
+      IMPORT_REGS ();
+      NEXT_BC;
+    }
+
+  /* Not the same class that is in the cache, or the primitive failed --
+     send the message, and modify the cache if the send is resolved to
+     a primitive.  */
+  last_primitive = 0;
+  SEND_MESSAGE (_gst_builtin_selectors[AT_SPECIAL].symbol, 1);
+  IMPORT_REGS ();
+  if (_gst_primitive_table[last_primitive].id == 60)
+    {
+      at_cache_spec = CLASS_INSTANCE_SPEC (classOOP);
+      at_cache_class = classOOP;
+      NEXT_BC;
+    }
+  FETCH;
+}
+
+operation AT_PUT_SPECIAL ( rec idx val -- res ) {
+  OOP classOOP;
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  if UNCOMMON (IS_INT (rec))
+    {
+      SEND_MESSAGE (_gst_builtin_selectors[AT_PUT_SPECIAL].symbol, 2);
+      IMPORT_REGS ();
+      FETCH;
+    }
+
+  if COMMON (at_put_cache_class == (classOOP = OOP_CLASS (rec))
+             && !cached_index_oop_put_primitive (rec, idx, val, at_put_cache_spec))
+    {
+      IMPORT_REGS ();
+      NEXT_BC;
+    }
+
+  /* Not the same class that is in the cache, or the primitive failed --
+     send the message, and modify the cache if the send is resolved to
+     a primitive.  */
+  last_primitive = 0;
+  SEND_MESSAGE (_gst_builtin_selectors[AT_PUT_SPECIAL].symbol, 2);
+  IMPORT_REGS ();
+  if (_gst_primitive_table[last_primitive].id == 61)
+    {
+      at_put_cache_spec = CLASS_INSTANCE_SPEC (classOOP);
+      at_put_cache_class = classOOP;
+      NEXT_BC;
+    }
+  FETCH;
+}
+
+operation SIZE_SPECIAL ( rec -- val ) {
+  OOP classOOP;
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  if UNCOMMON (IS_INT (rec))
+    {
+      SEND_MESSAGE (_gst_builtin_selectors[SIZE_SPECIAL].symbol, 0);
+      IMPORT_REGS ();
+      FETCH;
+    }
+
+  if COMMON (size_cache_class == (classOOP = OOP_CLASS (rec))
+             && !execute_primitive_operation (size_cache_prim, 0))
+    {
+      IMPORT_REGS ();
+      NEXT_BC;
+    }
+
+  /* Not the same class that is in the cache, or the primitive failed --
+     send the message, and modify the cache if the send is resolved to
+     a primitive.  */
+  last_primitive = 0;
+  SEND_MESSAGE (_gst_builtin_selectors[SIZE_SPECIAL].symbol, 0);
+  IMPORT_REGS ();
+  if COMMON (last_primitive)
+    {
+      size_cache_prim = last_primitive;
+      size_cache_class = classOOP;
+      NEXT_BC;
+    }
+  FETCH;
+}
+
+operation CLASS_SPECIAL ( rec -- val ) {
+  OOP classOOP;
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  if UNCOMMON (IS_INT (rec))
+    {
+      SEND_MESSAGE (_gst_builtin_selectors[CLASS_SPECIAL].symbol, 0);
+      IMPORT_REGS ();
+      FETCH;
+    }
+
+  if COMMON (class_cache_class == (classOOP = OOP_CLASS (rec))
+             && !execute_primitive_operation (class_cache_prim, 1))
+    {
+      IMPORT_REGS ();
+      NEXT_BC;
+    }
+
+  /* Not the same class that is in the cache, or the primitive failed --
+     send the message, and modify the cache if the send is resolved to
+     a primitive.  */
+  last_primitive = 0;
+  SEND_MESSAGE (_gst_builtin_selectors[CLASS_SPECIAL].symbol, 0);
+  IMPORT_REGS ();
+  if COMMON (last_primitive)
+    {
+      class_cache_prim = last_primitive;
+      class_cache_class = classOOP;
+      NEXT_BC;
+    }
+  FETCH;
+}
+
+operation IS_NIL_SPECIAL ( rec -- val ) {
+  /* DO_JUMP_LOOKAHEAD (rec == _gst_nil_oop); */
+  val = rec == _gst_nil_oop ? _gst_true_oop : _gst_false_oop;
+}
+
+operation NOT_NIL_SPECIAL ( rec -- val ) {
+  /* DO_JUMP_LOOKAHEAD (rec != _gst_nil_oop); */
+  val = rec != _gst_nil_oop ? _gst_true_oop : _gst_false_oop;
+}
+
+operation VALUE_SPECIAL ( rec -- rec ) {
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  if (UNCOMMON (IS_INT (rec))
+      || UNCOMMON (OOP_CLASS (rec) != _gst_block_closure_class)
+      || UNCOMMON (send_block_value (0, 0)))
+    SEND_MESSAGE (_gst_builtin_selectors[VALUE_SPECIAL].symbol, 0);
+
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation VALUE_COLON_SPECIAL ( rec blk_arg -- rec blk_arg ) {
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  if (UNCOMMON (IS_INT (rec))
+      || UNCOMMON (OOP_CLASS (rec) != _gst_block_closure_class)
+      || UNCOMMON (send_block_value (1, 0)))
+    SEND_MESSAGE (_gst_builtin_selectors[VALUE_COLON_SPECIAL].symbol, 1);
+
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation SAME_OBJECT_SPECIAL ( op1 op2 -- op ) {
+  /* DO_JUMP_LOOKAHEAD (op1 == op2); */
+  op = (op1 == op2) ? _gst_true_oop : _gst_false_oop;
+}
+
+operation JAVA_AS_INT_SPECIAL ( rec -- val ) {
+  if COMMON (IS_INT (rec) || is_c_int_32 (rec))
+    {
+      val = rec;
+      break;
+    }
+
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[JAVA_AS_INT_SPECIAL].symbol, 0);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation JAVA_AS_LONG_SPECIAL ( rec -- val ) {
+  if COMMON (IS_INT (rec) || is_c_int_64 (rec))
+    {
+      val = rec;
+      break;
+    }
+
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (_gst_builtin_selectors[JAVA_AS_LONG_SPECIAL].symbol, 0);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation SEND sel n ( -- ) {
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (METHOD_LITERAL (sel), n);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation SEND_SUPER sel n ( -- ) {
+  OOP classOOP;
+  PREPARE_STACK ();
+  classOOP = POP_OOP ();
+
+  EXPORT_REGS ();
+  SEND_TO_SUPER (METHOD_LITERAL (sel), n, classOOP);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation SEND_IMMEDIATE n ( -- ) {
+  const struct builtin_selector *bs = &_gst_builtin_selectors[n];
+  PREPARE_STACK ();
+  EXPORT_REGS ();
+  SEND_MESSAGE (bs->symbol, bs->numArgs);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation SEND_SUPER_IMMEDIATE n ( -- ) {
+  OOP classOOP;
+  const struct builtin_selector *bs = &_gst_builtin_selectors[n];
+  PREPARE_STACK ();
+  classOOP = POP_OOP ();
+
+  EXPORT_REGS ();
+  SEND_TO_SUPER (bs->symbol, bs->numArgs, classOOP);
+  IMPORT_REGS ();
+  FETCH;
+}
+
+operation PUSH_TEMPORARY_VARIABLE n ( -- tos ) {
+  tos = METHOD_TEMPORARY (n);
+}
+
+operation PUSH_OUTER_TEMP n scopes ( -- tos ) {
+  OOP contextOOP;
+  gst_block_context context;
+
+  context = (gst_block_context) OOP_TO_OBJ (_gst_this_context_oop);
+  do
+    {
+      contextOOP = context->outerContext;
+      context = (gst_block_context) OOP_TO_OBJ (contextOOP);
+    }
+  while (--scopes);
+
+  tos = context->contextStack[n];
+}
+
+operation PUSH_LIT_VARIABLE n ( -- tos ) {
+  tos = METHOD_LITERAL (n);
+  if (UNCOMMON (IS_INT (tos))
+      || UNCOMMON (!is_a_kind_of (OOP_CLASS (tos), _gst_association_class)))
+    {
+      PREPARE_STACK ();
+      PUSH_OOP (tos);
+      EXPORT_REGS ();
+      SEND_MESSAGE (_gst_builtin_selectors[VALUE_SPECIAL].symbol, 0);
+      IMPORT_REGS ();
+      FETCH;
+    }
+  else
+    tos = ASSOCIATION_VALUE (tos);
+}
+
+operation PUSH_RECEIVER_VARIABLE n ( -- tos ) {
+  tos = RECEIVER_VARIABLE (n);
+}
+
+operation STORE_TEMPORARY_VARIABLE n ( tos -- tos ) {
+  STORE_METHOD_TEMPORARY (n, tos);
+}
+
+operation STORE_OUTER_TEMP n scopes ( tos -- tos ) {
+  OOP contextOOP;
+  gst_block_context context;
+
+  context = (gst_block_context) OOP_TO_OBJ (_gst_this_context_oop);
+  do
+    {
+      contextOOP = context->outerContext;
+      context = (gst_block_context) OOP_TO_OBJ (contextOOP);
+    }
+  while (--scopes);
+
+  context->contextStack[n] = tos;
+}
+
+operation STORE_LIT_VARIABLE n ( tos -- tos ) {
+  OOP var = METHOD_LITERAL (n), value = tos;
+  if (UNCOMMON (IS_INT (var))
+      || UNCOMMON (!is_a_kind_of (OOP_CLASS (var), _gst_association_class)))
+    {
+      PREPARE_STACK ();
+      SET_STACKTOP (var);
+      PUSH_OOP (value);
+      EXPORT_REGS ();
+      SEND_MESSAGE (_gst_builtin_selectors[VALUE_COLON_SPECIAL].symbol, 1);
+      IMPORT_REGS ();
+      FETCH;
+    }
+  else
+    SET_ASSOCIATION_VALUE (var, value);
+}
+
+operation STORE_RECEIVER_VARIABLE n ( tos -- tos ) {
+  STORE_RECEIVER_VARIABLE (n, tos);
+}
+
+operation JUMP_BACK n ( -- ) {
+  PREPARE_STACK ();
+  ip -= n;
+  FETCH;
+}
+
+operation JUMP n ( -- ) {
+  PREPARE_STACK ();
+  ip += n;
+  FETCH;
+}
+
+operation POP_JUMP_FALSE n ( tos -- ) {
+  if UNCOMMON (tos == _gst_false_oop)
+    {
+      PREPARE_STACK ();
+      POP_N_OOPS(1);
+      ip += n;
+      FETCH;
+    }
+  else if UNCOMMON (tos != _gst_true_oop)
+    {
+      ip += n;
+      PREPARE_STACK ();
+      EXPORT_REGS();
+      SEND_MESSAGE(_gst_must_be_boolean_symbol, 0);
+      IMPORT_REGS();
+      FETCH;
+    }
+}
+
+operation POP_JUMP_TRUE n ( tos -- ) {
+  if UNCOMMON (tos == _gst_true_oop)
+    {
+      PREPARE_STACK ();
+      POP_N_OOPS(1);
+      ip += n;
+      FETCH;
+    }
+  else if UNCOMMON (tos != _gst_false_oop)
+    {
+      ip += n;
+      PREPARE_STACK ();
+      EXPORT_REGS();
+      SEND_MESSAGE(_gst_must_be_boolean_symbol, 0);
+      IMPORT_REGS();
+      FETCH;
+    }
+}
+
+operation PUSH_INTEGER n ( -- tos ) {
+  tos = FROM_INT (n);
+}
+
+operation PUSH_SPECIAL n ( -- tos ) {
+  tos = _gst_nil_oop + (n - NIL_INDEX);
+}
+
+operation PUSH_LIT_CONSTANT n ( -- tos ) {
+  tos = METHOD_LITERAL (n);
+}
+
+operation POP_INTO_NEW_STACKTOP n ( obj val -- obj ) {
+  STORE_INSTANCE_VARIABLE (obj, n, val);
+}
+
+operation POP_STACK_TOP ( tos -- ) {
+}
+
+operation MAKE_DIRTY_BLOCK ( block -- closure ) {
+  EXPORT_REGS ();
+  closure = _gst_make_block_closure (block);
+  IMPORT_REGS();
+}
+
+operation RETURN_METHOD_STACK_TOP ( val -- val ) {
+  EXPORT_REGS ();
+  if UNCOMMON (!unwind_method ())
+    {
+      SEND_MESSAGE (_gst_bad_return_error_symbol, 0);
+      IMPORT_REGS ();
+    }
+  else
+    {
+      IMPORT_REGS ();
+      SET_STACKTOP (val);
+    }
+  FETCH;
+}
+
+operation RETURN_CONTEXT_STACK_TOP ( val -- val ) {
+  EXPORT_REGS ();
+  unwind_context ();
+  IMPORT_REGS ();
+  SET_STACKTOP (val);
+  FETCH;
+}
+
+operation DUP_STACK_TOP ( tos -- tos tos2 ) {
+  tos2 = tos;
+}
+
+operation EXIT_INTERPRETER ( val -- val ) {
+  /* This fixes a very rare condition, but it can happen: GC can
+     happen because send_message_internal allocates a context
+     while the interpreter is checking last_primitive to fill
+     the special cache for #at:, #at:put: and #size.  If there
+     are finalizable objects, the finalization callins might
+     change last_primitive to a bogus value.  To fix the
+     problem, we invalidate last_primitive every time the
+     interpreter exits.  */
+  last_primitive = 0;
+
+  {
+    OOP activeProcessOOP = get_scheduled_process ();
+    gst_callin_process process = (gst_callin_process) OOP_TO_OBJ (activeProcessOOP);
+    if (IS_NIL (activeProcessOOP))
+      abort ();
+
+    if (process->objClass == _gst_callin_process_class)
+      process->returnedValue = val;
+    _gst_terminate_process (activeProcessOOP);
+    if (processOOP == activeProcessOOP)
+      SET_EXCEPT_FLAG (true);
+  }
+  FETCH;
+}
+
+operation LINE_NUMBER_BYTECODE ( -- ) {
+}
+
+operation PUSH_SELF ( -- tos ) {
+  tos = _gst_self;
+}
+
+table monitored_byte_codes {
+  0..255 = monitor_byte_codes
+}
+
+/* for jump lookahead */
+table true_byte_codes {
+  0..41 = lookahead_failed_true,
+  42 = bc41,				/* pop/jump if true ==> jump */
+  43 = bc54,				/* pop/jump if false ==> nop */
+  44..51 = lookahead_failed_true,
+  52 = lookahead_dup_true,
+  53..255 = lookahead_failed_true
+}
+
+table false_byte_codes {
+  0..41 = lookahead_failed_false,
+  42 = bc54,				/* pop/jump if true ==> nop */
+  43 = bc41,				/* pop/jump if false ==> jump */
+  44..51 = lookahead_failed_false,
+  52 = lookahead_dup_false,
+  53..255 = lookahead_failed_false
+}
+
+/* Automatically generated by superops.  Do not modify past this line!  */
+table normal_byte_codes {
+  0 = bytecode bc0 {
+    PREFETCH ();
+    PLUS_SPECIAL ();
+  }
+
+  1 = bytecode bc1 {
+    PREFETCH ();
+    MINUS_SPECIAL ();
+  }
+
+  2 = bytecode bc2 {
+    PREFETCH ();
+    LESS_THAN_SPECIAL ();
+  }
+
+  3 = bytecode bc3 {
+    PREFETCH ();
+    GREATER_THAN_SPECIAL ();
+  }
+
+  4 = bytecode bc4 {
+    PREFETCH ();
+    LESS_EQUAL_SPECIAL ();
+  }
+
+  5 = bytecode bc5 {
+    PREFETCH ();
+    GREATER_EQUAL_SPECIAL ();
+  }
+
+  6 = bytecode bc6 {
+    PREFETCH ();
+    EQUAL_SPECIAL ();
+  }
+
+  7 = bytecode bc7 {
+    PREFETCH ();
+    NOT_EQUAL_SPECIAL ();
+  }
+
+  8 = bytecode bc8 {
+    PREFETCH ();
+    TIMES_SPECIAL ();
+  }
+
+  9 = bytecode bc9 {
+    PREFETCH ();
+    DIVIDE_SPECIAL ();
+  }
+
+  10 = bytecode bc10 {
+    PREFETCH ();
+    REMAINDER_SPECIAL ();
+  }
+
+  11 = bytecode bc11 {
+    PREFETCH ();
+    BIT_XOR_SPECIAL ();
+  }
+
+  12 = bytecode bc12 {
+    PREFETCH ();
+    BIT_SHIFT_SPECIAL ();
+  }
+
+  13 = bytecode bc13 {
+    PREFETCH ();
+    INTEGER_DIVIDE_SPECIAL ();
+  }
+
+  14 = bytecode bc14 {
+    PREFETCH ();
+    BIT_AND_SPECIAL ();
+  }
+
+  15 = bytecode bc15 {
+    PREFETCH ();
+    BIT_OR_SPECIAL ();
+  }
+
+  16 = bytecode bc16 {
+    PREFETCH ();
+    AT_SPECIAL ();
+  }
+
+  17 = bytecode bc17 {
+    PREFETCH ();
+    AT_PUT_SPECIAL ();
+  }
+
+  18 = bytecode bc18 {
+    PREFETCH ();
+    SIZE_SPECIAL ();
+  }
+
+  19 = bytecode bc19 {
+    PREFETCH ();
+    CLASS_SPECIAL ();
+  }
+
+  20 = bytecode bc20 {
+    PREFETCH ();
+    IS_NIL_SPECIAL ();
+  }
+
+  21 = bytecode bc21 {
+    PREFETCH ();
+    NOT_NIL_SPECIAL ();
+  }
+
+  22 = bytecode bc22 {
+    PREFETCH ();
+    VALUE_SPECIAL ();
+  }
+
+  23 = bytecode bc23 {
+    PREFETCH ();
+    VALUE_COLON_SPECIAL ();
+  }
+
+  24 = bytecode bc24 {
+    PREFETCH ();
+    SAME_OBJECT_SPECIAL ();
+  }
+
+  25 = bytecode bc25 {
+    PREFETCH ();
+    JAVA_AS_INT_SPECIAL ();
+  }
+
+  26 = bytecode bc26 {
+    PREFETCH ();
+    JAVA_AS_LONG_SPECIAL ();
+  }
+
+  27 = bytecode bc27 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  28 = bytecode bc28 {
+    PREFETCH ();
+    SEND (arg >> 8, arg & 255);
+  }
+
+  29 = bytecode bc29 {
+    PREFETCH ();
+    SEND_SUPER (arg >> 8, arg & 255);
+  }
+
+  30 = bytecode bc30 {
+    PREFETCH ();
+    SEND_IMMEDIATE (arg);
+  }
+
+  31 = bytecode bc31 {
+    PREFETCH ();
+    SEND_SUPER_IMMEDIATE (arg);
+  }
+
+  32 = bytecode bc32 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+  }
+
+  33 = bytecode bc33 {
+    PREFETCH ();
+    PUSH_OUTER_TEMP (arg >> 8, arg & 255);
+  }
+
+  34 = bytecode bc34 {
+    PREFETCH ();
+    PUSH_LIT_VARIABLE (arg);
+  }
+
+  35 = bytecode bc35 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (arg);
+  }
+
+  36 = bytecode bc36 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (arg);
+  }
+
+  37 = bytecode bc37 {
+    PREFETCH ();
+    STORE_OUTER_TEMP (arg >> 8, arg & 255);
+  }
+
+  38 = bytecode bc38 {
+    PREFETCH ();
+    STORE_LIT_VARIABLE (arg);
+  }
+
+  39 = bytecode bc39 {
+    PREFETCH ();
+    STORE_RECEIVER_VARIABLE (arg);
+  }
+
+  40 = bytecode bc40 {
+    ADVANCE ();
+    JUMP_BACK (arg);
+  }
+
+  41 = bytecode bc41 {
+    ADVANCE ();
+    JUMP (arg);
+  }
+
+  42 = bytecode bc42 {
+    PREFETCH ();
+    POP_JUMP_TRUE (arg);
+  }
+
+  43 = bytecode bc43 {
+    PREFETCH ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  44 = bytecode bc44 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+  }
+
+  45 = bytecode bc45 {
+    PREFETCH ();
+    PUSH_SPECIAL (arg);
+  }
+
+  46 = bytecode bc46 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+  }
+
+  47 = bytecode bc47 {
+    PREFETCH ();
+    POP_INTO_NEW_STACKTOP (arg);
+  }
+
+  48 = bytecode bc48 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+  }
+
+  49 = bytecode bc49 {
+    PREFETCH ();
+    MAKE_DIRTY_BLOCK ();
+  }
+
+  50 = bytecode bc50 {
+    PREFETCH ();
+    RETURN_METHOD_STACK_TOP ();
+  }
+
+  51 = bytecode bc51 {
+    PREFETCH ();
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  52 = bytecode bc52 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+  }
+
+  53 = bytecode bc53 {
+    PREFETCH ();
+    EXIT_INTERPRETER ();
+  }
+
+  54 = bytecode bc54 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  55 = bytecode bc55 {
+    EXT_BYTE ();
+  }
+
+  56 = bytecode bc56 {
+    PREFETCH ();
+    PUSH_SELF ();
+  }
+
+  57 = bytecode bc57 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  58 = bytecode bc58 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  59 = bytecode bc59 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  60 = bytecode bc60 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  61 = bytecode bc61 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  62 = bytecode bc62 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  63 = bytecode bc63 {
+    PREFETCH ();
+    INVALID (arg);
+  }
+
+  64 = bytecode bc64 {
+    PREFETCH ();
+    SEND (arg, 1);
+  }
+
+  65 = bytecode bc65 {
+    PREFETCH ();
+    SEND (arg, 0);
+  }
+
+  66 = bytecode bc66 {
+    PREFETCH ();
+    PUSH_SELF ();
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  67 = bytecode bc67 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+  }
+
+  68 = bytecode bc68 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+  }
+
+  69 = bytecode bc69 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (0);
+  }
+
+  70 = bytecode bc70 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+  }
+
+  71 = bytecode bc71 {
+    PREFETCH ();
+    SEND (arg, 2);
+  }
+
+  72 = bytecode bc72 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    DUP_STACK_TOP ();
+  }
+
+  73 = bytecode bc73 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND_IMMEDIATE (arg);
+  }
+
+  74 = bytecode bc74 {
+    PREFETCH ();
+    PUSH_SELF ();
+    SEND (arg, 0);
+  }
+
+  75 = bytecode bc75 {
+    PREFETCH ();
+    PUSH_SPECIAL (arg);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  76 = bytecode bc76 {
+    PREFETCH ();
+    PUSH_SELF ();
+    SEND_IMMEDIATE (arg);
+  }
+
+  77 = bytecode bc77 {
+    PREFETCH ();
+    PUSH_OUTER_TEMP (arg, 1);
+  }
+
+  78 = bytecode bc78 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (arg);
+    POP_STACK_TOP ();
+  }
+
+  79 = bytecode bc79 {
+    PREFETCH ();
+    PUSH_SELF ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+  }
+
+  80 = bytecode bc80 {
+    PREFETCH ();
+    STORE_RECEIVER_VARIABLE (arg);
+    PUSH_SELF ();
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  81 = bytecode bc81 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    PLUS_SPECIAL ();
+  }
+
+  82 = bytecode bc82 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_LIT_VARIABLE (0);
+  }
+
+  83 = bytecode bc83 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    PUSH_TEMPORARY_VARIABLE (arg);
+  }
+
+  84 = bytecode bc84 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (arg >> 8, arg & 255);
+  }
+
+  85 = bytecode bc85 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (1);
+  }
+
+  86 = bytecode bc86 {
+    PREFETCH ();
+    IS_NIL_SPECIAL ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  87 = bytecode bc87 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    EQUAL_SPECIAL ();
+  }
+
+  88 = bytecode bc88 {
+    PREFETCH ();
+    SEND (arg, 3);
+  }
+
+  89 = bytecode bc89 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (arg, 1);
+  }
+
+  90 = bytecode bc90 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND (0, 0);
+  }
+
+  91 = bytecode bc91 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  92 = bytecode bc92 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND_IMMEDIATE (36);
+  }
+
+  93 = bytecode bc93 {
+    PREFETCH ();
+    SAME_OBJECT_SPECIAL ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  94 = bytecode bc94 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND (1, 1);
+  }
+
+  95 = bytecode bc95 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_SELF ();
+  }
+
+  96 = bytecode bc96 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    DUP_STACK_TOP ();
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  97 = bytecode bc97 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (arg, 0);
+  }
+
+  98 = bytecode bc98 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND_IMMEDIATE (arg);
+  }
+
+  99 = bytecode bc99 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    EQUAL_SPECIAL ();
+  }
+
+  100 = bytecode bc100 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    MINUS_SPECIAL ();
+  }
+
+  101 = bytecode bc101 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  102 = bytecode bc102 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  103 = bytecode bc103 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    SEND_IMMEDIATE (32);
+  }
+
+  104 = bytecode bc104 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    SIZE_SPECIAL ();
+  }
+
+  105 = bytecode bc105 {
+    PREFETCH ();
+    PUSH_SELF ();
+    SEND (arg >> 8, arg & 255);
+  }
+
+  106 = bytecode bc106 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (2);
+  }
+
+  107 = bytecode bc107 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    SEND_IMMEDIATE (arg);
+  }
+
+  108 = bytecode bc108 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PUSH_INTEGER (1);
+    PLUS_SPECIAL ();
+  }
+
+  109 = bytecode bc109 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_RECEIVER_VARIABLE (0);
+  }
+
+  110 = bytecode bc110 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND_IMMEDIATE (38);
+  }
+
+  111 = bytecode bc111 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    AT_SPECIAL ();
+  }
+
+  112 = bytecode bc112 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_RECEIVER_VARIABLE (1);
+  }
+
+  113 = bytecode bc113 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    PUSH_LIT_CONSTANT (arg);
+  }
+
+  114 = bytecode bc114 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    POP_JUMP_TRUE (arg);
+  }
+
+  115 = bytecode bc115 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    AT_SPECIAL ();
+  }
+
+  116 = bytecode bc116 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (2);
+    SEND_IMMEDIATE (arg);
+  }
+
+  117 = bytecode bc117 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND_IMMEDIATE (49);
+  }
+
+  118 = bytecode bc118 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (1);
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+  }
+
+  119 = bytecode bc119 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg, 1);
+  }
+
+  120 = bytecode bc120 {
+    PREFETCH ();
+    STORE_RECEIVER_VARIABLE (arg);
+    POP_STACK_TOP ();
+  }
+
+  121 = bytecode bc121 {
+    PREFETCH ();
+    STORE_OUTER_TEMP (arg, 1);
+  }
+
+  122 = bytecode bc122 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    SEND_IMMEDIATE (96);
+  }
+
+  123 = bytecode bc123 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+  }
+
+  124 = bytecode bc124 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (arg);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  125 = bytecode bc125 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (1);
+  }
+
+  126 = bytecode bc126 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (0);
+  }
+
+  127 = bytecode bc127 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    PUSH_LIT_CONSTANT (0);
+  }
+
+  128 = bytecode bc128 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  129 = bytecode bc129 {
+    PREFETCH ();
+    PUSH_SELF ();
+    SIZE_SPECIAL ();
+  }
+
+  130 = bytecode bc130 {
+    PREFETCH ();
+    IS_NIL_SPECIAL ();
+    POP_JUMP_TRUE (arg);
+  }
+
+  131 = bytecode bc131 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    AT_PUT_SPECIAL ();
+  }
+
+  132 = bytecode bc132 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_LIT_VARIABLE (1);
+  }
+
+  133 = bytecode bc133 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PLUS_SPECIAL ();
+  }
+
+  134 = bytecode bc134 {
+    ADVANCE ();
+    POP_STACK_TOP ();
+    JUMP_BACK (arg);
+  }
+
+  135 = bytecode bc135 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    PUSH_LIT_VARIABLE (arg);
+  }
+
+  136 = bytecode bc136 {
+    PREFETCH ();
+    PUSH_INTEGER (1);
+    STORE_TEMPORARY_VARIABLE (arg);
+  }
+
+  137 = bytecode bc137 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND (2, 1);
+  }
+
+  138 = bytecode bc138 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (3);
+  }
+
+  139 = bytecode bc139 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_OUTER_TEMP (0, 1);
+  }
+
+  140 = bytecode bc140 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (arg);
+    SEND (0, 0);
+  }
+
+  141 = bytecode bc141 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    GREATER_THAN_SPECIAL ();
+  }
+
+  142 = bytecode bc142 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    VALUE_SPECIAL ();
+  }
+
+  143 = bytecode bc143 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    MINUS_SPECIAL ();
+  }
+
+  144 = bytecode bc144 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND (3, 1);
+  }
+
+  145 = bytecode bc145 {
+    PREFETCH ();
+    PUSH_SPECIAL (0);
+    SAME_OBJECT_SPECIAL ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  146 = bytecode bc146 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (2);
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+  }
+
+  147 = bytecode bc147 {
+    PREFETCH ();
+    SAME_OBJECT_SPECIAL ();
+    POP_JUMP_TRUE (arg);
+  }
+
+  148 = bytecode bc148 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    TIMES_SPECIAL ();
+  }
+
+  149 = bytecode bc149 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_RECEIVER_VARIABLE (2);
+  }
+
+  150 = bytecode bc150 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    LESS_THAN_SPECIAL ();
+  }
+
+  151 = bytecode bc151 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    AT_PUT_SPECIAL ();
+  }
+
+  152 = bytecode bc152 {
+    PREFETCH ();
+    PUSH_OUTER_TEMP (arg, 2);
+  }
+
+  153 = bytecode bc153 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (0, 1);
+  }
+
+  154 = bytecode bc154 {
+    PREFETCH ();
+    PUSH_SELF ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (arg, 1);
+  }
+
+  155 = bytecode bc155 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND_IMMEDIATE (40);
+  }
+
+  156 = bytecode bc156 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PUSH_TEMPORARY_VARIABLE (3);
+  }
+
+  157 = bytecode bc157 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (1);
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  158 = bytecode bc158 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (0, 0);
+  }
+
+  159 = bytecode bc159 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    BIT_AND_SPECIAL ();
+  }
+
+  160 = bytecode bc160 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (2);
+    SEND (arg, 0);
+  }
+
+  161 = bytecode bc161 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg >> 8, arg & 255);
+  }
+
+  162 = bytecode bc162 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    PUSH_TEMPORARY_VARIABLE (0);
+  }
+
+  163 = bytecode bc163 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_RECEIVER_VARIABLE (3);
+  }
+
+  164 = bytecode bc164 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (2);
+    SEND (arg, 1);
+  }
+
+  165 = bytecode bc165 {
+    PREFETCH ();
+    NOT_NIL_SPECIAL ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  166 = bytecode bc166 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (2);
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  167 = bytecode bc167 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (3);
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+  }
+
+  168 = bytecode bc168 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (1);
+    SEND_IMMEDIATE (arg);
+  }
+
+  169 = bytecode bc169 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    EQUAL_SPECIAL ();
+  }
+
+  170 = bytecode bc170 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    DUP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PUSH_INTEGER (1);
+    PLUS_SPECIAL ();
+  }
+
+  171 = bytecode bc171 {
+    PREFETCH ();
+    PUSH_SELF ();
+    SEND (arg, 1);
+  }
+
+  172 = bytecode bc172 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (0);
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+  }
+
+  173 = bytecode bc173 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  174 = bytecode bc174 {
+    PREFETCH ();
+    PUSH_SELF ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND_IMMEDIATE (49);
+  }
+
+  175 = bytecode bc175 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    PUSH_RECEIVER_VARIABLE (arg);
+  }
+
+  176 = bytecode bc176 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND_IMMEDIATE (84);
+  }
+
+  177 = bytecode bc177 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_LIT_VARIABLE (2);
+  }
+
+  178 = bytecode bc178 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+    SEND (3, 1);
+  }
+
+  179 = bytecode bc179 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_LIT_CONSTANT (0);
+  }
+
+  180 = bytecode bc180 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND_IMMEDIATE (36);
+  }
+
+  181 = bytecode bc181 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_OUTER_TEMP (1, 1);
+  }
+
+  182 = bytecode bc182 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    INTEGER_DIVIDE_SPECIAL ();
+  }
+
+  183 = bytecode bc183 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (1);
+    MAKE_DIRTY_BLOCK ();
+    SEND_IMMEDIATE (arg);
+  }
+
+  184 = bytecode bc184 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (3);
+    SEND_IMMEDIATE (arg);
+  }
+
+  185 = bytecode bc185 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SPECIAL (0);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  186 = bytecode bc186 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_RECEIVER_VARIABLE (5);
+  }
+
+  187 = bytecode bc187 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+    SEND (2, 1);
+  }
+
+  188 = bytecode bc188 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    VALUE_COLON_SPECIAL ();
+  }
+
+  189 = bytecode bc189 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  190 = bytecode bc190 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    SEND (arg, 2);
+  }
+
+  191 = bytecode bc191 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PUSH_INTEGER (1);
+    MINUS_SPECIAL ();
+  }
+
+  192 = bytecode bc192 {
+    PREFETCH ();
+    PUSH_SELF ();
+    PUSH_LIT_CONSTANT (arg);
+  }
+
+  193 = bytecode bc193 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_RECEIVER_VARIABLE (4);
+  }
+
+  194 = bytecode bc194 {
+    PREFETCH ();
+    PUSH_OUTER_TEMP (0, 1);
+    SEND_IMMEDIATE (arg);
+  }
+
+  195 = bytecode bc195 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND (1, 0);
+  }
+
+  196 = bytecode bc196 {
+    PREFETCH ();
+    PUSH_OUTER_TEMP (0, 1);
+    SEND (arg, 1);
+  }
+
+  197 = bytecode bc197 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (4);
+    SEND_IMMEDIATE (arg);
+  }
+
+  198 = bytecode bc198 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    SEND_IMMEDIATE (41);
+  }
+
+  199 = bytecode bc199 {
+    PREFETCH ();
+    SEND (arg, 4);
+  }
+
+  200 = bytecode bc200 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PUSH_TEMPORARY_VARIABLE (2);
+  }
+
+  201 = bytecode bc201 {
+    PREFETCH ();
+    PUSH_SELF ();
+    CLASS_SPECIAL ();
+  }
+
+  202 = bytecode bc202 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg >> 8, arg & 255);
+  }
+
+  203 = bytecode bc203 {
+    PREFETCH ();
+    PUSH_SELF ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg, 1);
+  }
+
+  204 = bytecode bc204 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND (4, 1);
+  }
+
+  205 = bytecode bc205 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    SEND (0, 1);
+  }
+
+  206 = bytecode bc206 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (arg);
+    SIZE_SPECIAL ();
+  }
+
+  207 = bytecode bc207 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg, 2);
+  }
+
+  208 = bytecode bc208 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg, 2);
+  }
+
+  209 = bytecode bc209 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    POP_INTO_NEW_STACKTOP (0);
+  }
+
+  210 = bytecode bc210 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+    SEND (5, 1);
+  }
+
+  211 = bytecode bc211 {
+    PREFETCH ();
+    SEND_SUPER (arg, 1);
+  }
+
+  212 = bytecode bc212 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+    SEND (4, 1);
+  }
+
+  213 = bytecode bc213 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (1);
+    SEND_IMMEDIATE (arg);
+  }
+
+  214 = bytecode bc214 {
+    PREFETCH ();
+    STORE_OUTER_TEMP (arg, 1);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  215 = bytecode bc215 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    LINE_NUMBER_BYTECODE ();
+    SEND_IMMEDIATE (37);
+  }
+
+  216 = bytecode bc216 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    CLASS_SPECIAL ();
+  }
+
+  217 = bytecode bc217 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    SEND (arg, 0);
+  }
+
+  218 = bytecode bc218 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND_IMMEDIATE (130);
+  }
+
+  219 = bytecode bc219 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (0);
+    SEND_IMMEDIATE (arg);
+  }
+
+  220 = bytecode bc220 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    PUSH_LIT_VARIABLE (arg);
+  }
+
+  221 = bytecode bc221 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (0);
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  222 = bytecode bc222 {
+    PREFETCH ();
+    PUSH_RECEIVER_VARIABLE (2);
+    SEND_IMMEDIATE (arg);
+  }
+
+  223 = bytecode bc223 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND (2, 0);
+  }
+
+  224 = bytecode bc224 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (2);
+  }
+
+  225 = bytecode bc225 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+    SEND (6, 1);
+  }
+
+  226 = bytecode bc226 {
+    PREFETCH ();
+    PUSH_SPECIAL (arg);
+    RETURN_METHOD_STACK_TOP ();
+  }
+
+  227 = bytecode bc227 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    GREATER_EQUAL_SPECIAL ();
+  }
+
+  228 = bytecode bc228 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_RECEIVER_VARIABLE (1);
+  }
+
+  229 = bytecode bc229 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_LIT_VARIABLE (3);
+  }
+
+  230 = bytecode bc230 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (2);
+    SEND_IMMEDIATE (arg);
+  }
+
+  231 = bytecode bc231 {
+    PREFETCH ();
+    SEND_SUPER (arg, 0);
+  }
+
+  232 = bytecode bc232 {
+    PREFETCH ();
+    PUSH_SPECIAL (0);
+    STORE_RECEIVER_VARIABLE (arg);
+  }
+
+  233 = bytecode bc233 {
+    PREFETCH ();
+    PUSH_SELF ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    SEND (0, 1);
+  }
+
+  234 = bytecode bc234 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  235 = bytecode bc235 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    SAME_OBJECT_SPECIAL ();
+  }
+
+  236 = bytecode bc236 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    MAKE_DIRTY_BLOCK ();
+    SEND (1, 1);
+  }
+
+  237 = bytecode bc237 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (3);
+  }
+
+  238 = bytecode bc238 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    DUP_STACK_TOP ();
+    SEND_IMMEDIATE (arg);
+  }
+
+  239 = bytecode bc239 {
+    PREFETCH ();
+    PUSH_LIT_CONSTANT (arg);
+    PUSH_TEMPORARY_VARIABLE (0);
+    AT_PUT_SPECIAL ();
+  }
+
+  240 = bytecode bc240 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    PUSH_INTEGER (1);
+    PLUS_SPECIAL ();
+  }
+
+  241 = bytecode bc241 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (4);
+  }
+
+  242 = bytecode bc242 {
+    PREFETCH ();
+    POP_STACK_TOP ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_LIT_VARIABLE (1);
+  }
+
+  243 = bytecode bc243 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    PUSH_LIT_CONSTANT (arg);
+    SEND (1, 1);
+  }
+
+  244 = bytecode bc244 {
+    PREFETCH ();
+    POP_INTO_NEW_STACKTOP (1);
+    SEND (arg, 1);
+  }
+
+  245 = bytecode bc245 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    POP_STACK_TOP ();
+    PUSH_TEMPORARY_VARIABLE (1);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  246 = bytecode bc246 {
+    PREFETCH ();
+    STORE_TEMPORARY_VARIABLE (3);
+    LINE_NUMBER_BYTECODE ();
+  }
+
+  247 = bytecode bc247 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    SEND (arg, 0);
+  }
+
+  248 = bytecode bc248 {
+    PREFETCH ();
+    STORE_RECEIVER_VARIABLE (arg);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  249 = bytecode bc249 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_SELF ();
+    SEND (3, 0);
+  }
+
+  250 = bytecode bc250 {
+    PREFETCH ();
+    NOT_NIL_SPECIAL ();
+    DUP_STACK_TOP ();
+    POP_JUMP_FALSE (arg);
+  }
+
+  251 = bytecode bc251 {
+    PREFETCH ();
+    DUP_STACK_TOP ();
+    PUSH_LIT_CONSTANT (arg);
+  }
+
+  252 = bytecode bc252 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_TEMPORARY_VARIABLE (0);
+    RETURN_CONTEXT_STACK_TOP ();
+  }
+
+  253 = bytecode bc253 {
+    PREFETCH ();
+    PUSH_INTEGER (arg);
+    AT_PUT_SPECIAL ();
+  }
+
+  254 = bytecode bc254 {
+    PREFETCH ();
+    PUSH_TEMPORARY_VARIABLE (arg);
+    CLASS_SPECIAL ();
+  }
+
+  255 = bytecode bc255 {
+    PREFETCH ();
+    LINE_NUMBER_BYTECODE ();
+    PUSH_OUTER_TEMP (2, 1);
+  }
+
+}

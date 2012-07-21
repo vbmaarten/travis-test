@@ -1,0 +1,14 @@
+<package>
+  <name>GLUT</name>
+  <namespace>OpenGL</namespace>
+  <prereq>OpenGL</prereq>
+
+  <filein>OpenGlut.st</filein>
+  <filein>OpenGlutEnum.st</filein>
+  <filein>OpenGlutCallbacks.st</filein>
+  <filein>OpenGlutExampleObjects.st</filein>
+
+  <module>gstglut</module>
+
+  <file>ChangeLog</file>
+</package>

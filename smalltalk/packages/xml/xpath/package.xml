@@ -1,0 +1,7 @@
+<package>
+  <name>XPath</name>
+  <namespace>XML</namespace>
+
+  <prereq>XML-DOM</prereq>
+  <filein>XPath.st</filein>
+</package>

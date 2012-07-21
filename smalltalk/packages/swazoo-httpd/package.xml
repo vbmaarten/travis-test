@@ -1,0 +1,61 @@
+<package>
+  <name>Swazoo</name>
+  <prereq>Sport</prereq>
+  <namespace>Swazoo</namespace>
+
+  <start>
+    %1 isNil ifTrue: [ ^Swazoo.SwazooServer start ].
+    %1 ~ '^[0-9]+$' ifTrue: [ ^Swazoo.SwazooServer startOn: %1 asNumber ].
+    (File name: %1) exists ifTrue: [ ^Swazoo.SwazooServer configureFrom: %1 ].
+    %1 = 'swazoodemo' ifTrue: [ ^Swazoo.SwazooServer demoStart ].
+    Swazoo.SwazooServer startSite: %1
+  </start>
+
+  <stop>
+    %1 isNil ifTrue: [ ^Swazoo.SwazooServer stop ].
+    %1 ~ '^[0-9]+$' ifTrue: [ ^Swazoo.SwazooServer stopOn: %1 asNumber ].
+    Swazoo.SwazooServer stopSite: %1
+  </stop>
+
+  <test>
+    <sunit>
+      Swazoo.CompositeResourceTest
+      Swazoo.FileResourceTest
+      Swazoo.HTTPPostTest
+      Swazoo.HTTPRequestTest
+      Swazoo.HTTPResponseTest
+      Swazoo.HTTPServerTest
+      Swazoo.HeaderFieldTest
+      Swazoo.HelloWorldResourceTest
+      Swazoo.HomeResourceTest
+      Swazoo.RedirectionResourceTest
+      Swazoo.ResourceTest
+      Swazoo.SiteIdentifierTest
+      Swazoo.SiteTest
+      Swazoo.SwazooBaseExtensionsTest
+      Swazoo.SwazooBoundaryTest
+      Swazoo.SwazooCacheControlTest
+      Swazoo.SwazooCompilerTest
+      Swazoo.SwazooConfigurationTest
+      Swazoo.SwazooServerTest
+      Swazoo.SwazooSocketTest
+      Swazoo.SwazooStreamTest
+      Swazoo.SwazooURITest
+      Swazoo.URIParsingTest
+      Swazoo.URIResolutionTest
+    </sunit>
+    <filein>Tests.st</filein>
+  </test>
+
+  <filein>Exceptions.st</filein>
+  <filein>Headers.st</filein>
+  <filein>Messages.st</filein>
+  <filein>Core.st</filein>
+  <filein>Resources.st</filein>
+  <filein>HTTP.st</filein>
+  <filein>Protocol.st</filein>
+  <filein>SCGI.st</filein>
+  <filein>Extensions.st</filein>
+
+  <file>PORTING</file>
+</package>

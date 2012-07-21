@@ -1,0 +1,13 @@
+<package>
+  <name>BloxGTK</name>
+  <namespace>BLOX</namespace>
+  <prereq>GTK</prereq>
+  <provides>Blox</provides>
+
+  <filein>BloxBasic.st</filein>
+  <filein>BloxWidgets.st</filein>
+  <filein>BloxText.st</filein>
+  <filein>BloxExtend.st</filein>
+  <filein>Blox.st</filein>
+</package>
+

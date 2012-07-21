@@ -1,0 +1,338 @@
+2010-12-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Remove now superfluous <file> tags.
+
+2010-03-11  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Collation.st: Delete.
+
+2010-02-19  Paolo Bonzini  <bonzini@gnu.org>
+
+	* GetText.st: Do not use instance-based exceptions.
+
+2010-01-01  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Update copyright years.
+
+2009-12-12  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: Move #primRootDirectory to class side.
+
+2008-04-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	* GetText.st: Use new File classes.
+
+2007-10-22  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: Store charsets as strings, not symbols.
+
+2007-06-29  Paolo Bonzini  <bonzini@gnu.org>
+
+	* i18n.c: Move part to iconv package.
+
+2007-06-25  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: Use #%.
+
+2006-12-05  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.3 released.
+
+2006-11-21  Paolo Bonzini  <bonzini@gnu.org>
+
+        * i18n.c: Add GPL exception.
+
+2006-11-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* i18n.c: Rename mst_Object to gst_object.
+
+2006-10-23  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Sets.st: Add EncodedString>>#asUnicodeString, transliterate
+	in EncodedString>>#printOn:, fix several String/UnicodeString/
+	Character/UnicodeCharacter conversion methods.
+
+2006-10-16  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Sets.st: Fix BOM detection bug.
+
+2006-10-16  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Sets.st: Fix bug in Split* encoders.
+
+2006-09-22  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: Move defaultDefaultEncoding to String.
+	* Sets.st: Add EncodedString and EncodedStringFactory.
+	Store from/to encodings in Encoder.
+
+2006-09-05  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Sets.st: Fix typo.
+
+2006-07-17  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: Add #defaultCharset, #defaultCharset:, make
+	it be 'UTF-8' by default.  Override CharacterArray class>>
+	#defaultDefaultEncoding.
+	* Sets.st: Change UCS2/UCS4 to UTF-16/UTF-32.  Consider
+	the default encoding to be big-endian in absence of a byte-order
+	mark.  Change #compose:/#split: to #compose:from:/#split:to:
+	to optimize conversions of UTF-32 (with specific endianness)
+	to/from UnicodeString.  Add methods to encode to/from
+	UnicodeString.  Use Characters, not Integers, to communicate to/from
+	non-iconv encoders.  Add CharacterArray class>>#defaultDefaultEncoding
+	and #utf32Encoding.  Override various methods to deal with MBCS
+	(numberOfCharacters, asUnicodeString, ...) for Character, String,
+	UnicodeString.  Recognize BOM in UTF-8 and UTF-32.  Add methods to
+	detect UTF-{16,32} encodings on Streams.
+
+2005-08-28  Paolo Bonzini  <bonzini@gnu.org>
+
+	* i18n.c: Add const to iconvWrapper.
+
+2005-03-25  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: Switch to new C-call descriptions.
+	* Sets.st: Switch to new C-call descriptions.
+
+2004-08-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* i18n.c: support preprocessor symbols other than WIN32
+	for Windows.
+
+2003-05-09  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.1.2 released.
+
+2003-04-17  Paolo Bonzini  <bonzini@gnu.org>
+
+        *** Version 2.1.1 (stable) released.
+
+2003-04-12  Paolo Bonzini  <bonzini@gnu.org>
+
+        *** Version 2.1 (stable) released.
+
+2002-11-19  Bruno Haible  <bruno@clisp.org>
+
+       * Locale.st: support files outside the system locale directory.
+
+2002-09-13  Paolo Bonzini  <bonzini@gnu.org>
+
+        *** Versions 2.0c (development) and 2.0.6 (stable) released
+
+2002-09-06  Bruno Haible  <haible@ilog.fr>
+
+        * GetText.st: support MO files outside the system
+        locale directory, more fixes
+
+2002-09-09  Paolo Bonzini  <bonzini@gnu.org>
+
+        * GetText.st: more fixes and API stabilization
+
+2002-09-05  Bruno Haible  <haible@ilog.fr>
+
+	* Locale.st: fix bugs
+	* GetText.st: fix bugs
+
+2002-08-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.0.5 (stable) released
+
+2002-08-12  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.0b (development) released
+
+2002-08-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Versions 2.0a (development) and 2.0.4 (stable) released
+
+2002-07-17  Paolo Bonzini  <bonzini@gnu.org>
+
+        *** Version 2.0.3 released
+
+2002-07-11  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.0.2 released
+	
+2002-06-28  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.0.1 released
+	
+2002-06-25  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 2.0 released
+	
+2002-06-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Expression.st: parse != correctly
+	* GetText.st: add a table of default plural expressions
+	
+2002-05-11  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 1.96.6 released
+	
+2002-04-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 1.96.5 released
+	
+2002-03-12  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 1.96.4 released
+	
+2002-01-29  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 1.96.3 released.
+
+2002-01-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Version 1.96.2 released
+	
+2002-01-02  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Load.st: load into the I18N namespace
+	* Sets.st: load into the I18N namespace
+
+2001-12-05  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: completed documentation
+	* Time.st: completed documentation
+	* Numbers.st: completed documentation
+	* GetText.st: completed documentation
+	* Collation.st: completed documentation
+	* Expression.st: completed documentation
+	* Sets.st: completed documentation, added exception
+	handling
+
+2001-11-13  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: prefixed # to symbols in arrays
+	* Sets.st: prefixed # to symbols in arrays
+
+2001-11-06  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: name -> id
+	* GetText.st: LcMessagesDomain now subclass of LocaleData.
+	Added transliteration support and moved caching code to
+	LcMessagesDomain (from LcMessagesCatalog).  #translate: now
+	called #primAt:.
+	* localcharset.c: new file
+	* config.charset: new file
+	* ref-add.sin: new file
+	* ref-del.sin: new file
+	* i18n.c: return result of locale_charset() in i18n_load
+	
+
+2001-11-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* i18n.c: fixed small memory leak when locale was not
+	found.  Added i18n_localeDirectory.
+	* Locale.st: use i18n_localeDirectory.
+
+2001-10-19  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Expression.st: created to support plurals
+	* GetText.st: support plurals
+
+2001-05-19  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: changed the DefaultCharsets to match
+	names supported by iconv.
+	* Sets.st: initialize DefaultEncoding automatically;
+	don't SIGSEGV if the charset is not supported (!).  Added
+	UTF-7 and (for simplicity when writing converters) the
+	ability to read 32-bit UCS-4 codes one at a time instead of
+	having them split across four bytes.
+	
+2001-04-17  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: remove references to the Charset dictionary
+	* Sets.st: rewritten once more...
+	* i18n.c: added the iconv wrapper
+	
+2001-04-02  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Locale.st: use ObjectMemory instead of init blocks.
+
+2001-03-31  Paolo Bonzini  <bonzini@gnu.org>
+
+	* i18n.c: created
+	* Locale.st: adapted to use the C module
+	* Time.st: adapted to use the C module
+	* Numbers.st: adapted to use the C module
+	* GetText.st: adapted to use the C module
+	* Load.st: don't load Collation.st
+	
+2001-02-23  Paolo Bonzini  <bonzini@gnu.org>
+
+	*** Released version 1.95.3
+
+2000-02-06  Paolo Bonzini (bonzini@gnu.org)
+
+	* Set-SJIS.st.in: made a fixed subclass of TableEncodedMultiByte
+	* Set-BIG5.st.in: made a fixed subclass of TableEncodedMultiByte
+	* Set-GB.st.in: made a fixed subclass of TableEncodedMultiByte
+	* Set-0208.st.in: made a fixed subclass of TableEncodedMultiByte
+	* Set-SBCS.st: classes made fixed of TableEncodedMultiByte
+	* Set-EUC.st.in: made a fixed subclass
+	* Collation.st: use new Stream interface to character sets.
+	* Locale.st: define category to be 'LANG' so that the
+	`Locale default charset' or `Locale default language' idioms work.
+	* Sets.st: partly rewritten to adopt Stream-based behavior
+	rather than subclassing CharacterArray.
+	
+2000-05-12  Paolo Bonzini (bonzini@gnu.org)
+
+	* Collate.st: debugged.
+	* Locale.st: LcFile was broken for POSIX locale (cachedData
+	was left uninitialized) -- fixed.  BigEndianFileStream has the same
+	optimizing trick as ByteStream (see main ChangeLog).
+
+
+2000-05-09  Paolo Bonzini (bonzini@gnu.org)
+
+	* Locale.st: made #flush call itself on the
+	subclasses, and made #rootDirectory: call #flush.
+	* GetText.st: tested and made it work (only
+	a couple of fixes were needed! I love Smalltalk).
+	
+2000-05-03  Paolo Bonzini (bonzini@gnu.org)
+
+	* Collation.st: added POSIX locale
+	* Locale.st: added POSIX locale support for LcFile's
+	* Numbers.st: added POSIX locale
+	* Times.st: added POSIX locale
+
+2000-05-01  Paolo Bonzini (bonzini@gnu.org)
+
+	* tables: created
+	* table_from: created
+	* table_ind: created
+	* table_to: created
+	* Set-SJIS.st.in: created
+	* Set-BIG5.st.in: created
+	* Set-EUC.st.in: created
+	* Set-GB.st.in: created
+	* Set-0208.st.in: created
+	* Unicode-0208: added
+	* Unicode-SJIS: added
+	* Unicode-0212: added
+	* Unicode-GB: added
+	* Unicode-BIG5: added
+
+2000-04-27  Paolo Bonzini (bonzini@gnu.org)
+
+	* Collation.st: created
+	* Load.st: created
+	* Numbers.st: created
+	* Times.st: created
+
+2000-04-25  Paolo Bonzini (bonzini@gnu.org)
+
+	* Locale.st: created
+	* Sets.st: created
+	* Set-SBCS.st: created
+
+2000-04-23  Paolo Bonzini (bonzini@gnu.org)
+ 
+	* GetText.st: created

@@ -1,0 +1,110 @@
+
+Execution begins...
+A(var1:1 )
+B(var1:0 var2:2 )
+2
+B(var1:0 var2:nil var2:2 )
+2
+B(var1:0 var2:2 )
+nil
+B(var1:0 var2:nil )
+returned value is B new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+returned value is true
+
+Execution begins...
+(#key #value )->Set ()
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+returned value is true
+
+Execution begins...
+(#a )->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+returned value is true
+
+Execution begins...
+(#a )->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+returned value is true
+
+Execution begins...
+(#key #value #a )->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+returned value is true
+
+Execution begins...
+(#Foo )->()->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+(#Foo )->(#key #value )->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+returned value is true
+
+Execution begins...
+#pointer->(#Foo )->()->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is C
+
+Execution begins...
+#pointer->(#Foo )->(#key #value )->Set (#SystemExceptions )
+returned value is Association new "<0>"
+
+Execution begins...
+returned value is CompiledMethod new: 4 "<0>"
+
+Execution begins...
+returned value is true
+
+Execution begins...
+Smalltalk
+returned value is SystemDictionary new: 512 "<0>"
+
+Execution begins...
+(#a #b #c )
+returned value is Array new: 3 "<0>"
+
+Execution begins...
+(#a #d #b #c )
+returned value is Array new: 4 "<0>"
+
+Execution begins...
+(#a #d )
+returned value is Array new: 2 "<0>"
+
+Execution begins...
+returned value is 'abc'

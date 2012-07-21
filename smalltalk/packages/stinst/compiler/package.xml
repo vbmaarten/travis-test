@@ -1,0 +1,10 @@
+<package>
+  <name>Compiler</name>
+  <namespace>STInST</namespace>
+  <prereq>Parser</prereq>
+  <filein>StartCompiler.st</filein>
+
+  <file>test.st</file>
+  <file>ChangeLog</file>
+</package>
+

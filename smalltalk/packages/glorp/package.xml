@@ -1,0 +1,16 @@
+<package>
+  <name>Glorp</name>
+  <prereq>DBD-MySQL</prereq>
+  <prereq>SUnit</prereq>
+
+  <namespace>Glorp</namespace>
+
+  <filein>GlorpPort.st</filein>
+  <filein>Glorp.st</filein>
+  <filein>GlorpMySQL.st</filein>
+
+  <test>
+    <sunit>Glorp.GlorpTestCase*</sunit>
+    <filein>GlorpTest.st</filein>
+  </test>
+</package>

@@ -1,0 +1,38 @@
+<package>
+  <name>Parser</name>
+
+  <namespace>STInST</namespace>
+  <filein>RBToken.st</filein>
+  <filein>RBParseNodes.st</filein>
+  <filein>RBParser.st</filein>
+  <filein>ParseTreeSearcher.st</filein>
+  <filein>RBFormatter.st</filein>
+  <filein>OrderedSet.st</filein>
+  <filein>STFileParser.st</filein>
+  <filein>STCompLit.st</filein>
+  <filein>STSymTable.st</filein>
+  <filein>STCompiler.st</filein>
+  <filein>STDecompiler.st</filein>
+  <filein>STLoaderObjs.st</filein>
+  <filein>STLoader.st</filein>
+  <filein>SqueakParser.st</filein>
+  <filein>SIFParser.st</filein>
+  <filein>GSTParser.st</filein>
+  <filein>STEvaluationDriver.st</filein>
+  <filein>Exporter.st</filein>
+  <filein>NewSyntaxExporter.st</filein>
+  <filein>OldSyntaxExporter.st</filein>
+  <filein>SqueakExporter.st</filein>
+  <filein>Extensions.st</filein>
+
+  <test>
+   <namespace>STInST.Tests</namespace>
+   <sunit>STInST.Tests.TestStandardRewrites</sunit>
+   <sunit>STInST.Tests.TestDefaultPoolResolution</sunit>
+   <sunit>STInST.Tests.TestClassicPoolResolution</sunit>
+   <filein>RewriteTests.st</filein>
+   <filein>PoolResolutionTests.st</filein>
+  </test>
+
+  <file>ChangeLog</file>
+</package>

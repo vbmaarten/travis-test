@@ -1,0 +1,104 @@
+2010-12-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Remove now superfluous <file> tags.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Oops.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Series.st: Unlike rectangles, series are by default empty.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Add GPDataSource>>#at:.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* 2D.st: Add #barGap, #barWidth, #bars:, GPBarSeries.
+	* Base.st: Fix some things in the design of grouped series.
+	* Examples.st: Add bar graph example.
+	* Series.st: Implement GPSeriesGroup.  Use template method
+	pattern for GPSeries>>#displayOn:group: and
+	GPDataSeries>>#displayOn:group:.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Series.st: Add special ticSpacing value of 0 to suppress tics.
+	Add GPAxis>>#from: and GPAxis>>#to:
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Series.st: Subclass GPSeriesStyle from GPRectangleStyle.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Series.st: Rename GPDataSeries' style instance variable to graphType.
+	* 2D.st: Likewise.  Remove non-existent style xerrorboxes.
+
+2008-03-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* 2D.st: Detect 1- and 2-column GPXYSeries datasets.  Use #defaultColumns.
+	* Expression.st: Add GPCondExpression, GPColumnRefValidExpression.
+	* Series.st: Use #defaultColumns.
+
+2008-03-03  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Series.st: Add "set format" support.
+
+2007-12-10  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Series.st: Allow autoscaling one end of the axes.
+
+2007-11-22  Paolo Bonzini  <bonzini@gnu.org>
+
+	* 2D.st: Override GPPlot>>#displaySeriesOn:.  Rename *Params
+	to *Style.
+	* Base.st: Rename *Params to *Style.  Extract GPElement from
+	GPSeries.  Extract GPContainer from GPPlot, use double dispatch
+	to add something to a GPContainer.  Support creating animations
+	instead of multiplots.	Extract some classes...
+	* Series.st: ... to here.  Add axis label style.  Add GPContainer
+	support to GPSeries.  Rename *Params to *Style.
+	* Objects.st: ... and here.  Add GPGraphicalObject hierarchy.
+	* Terminals.st: Add EPS, GIF, PDF terminals.
+
+2007-11-22  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Add GPAxis.  Extract GPParams and GPLineParams out of
+	GPSeriesParams.  Beautify printing of multiple series.
+	* 2D.st: Add #axes and accessors for GPAxis objects.
+	* Examples.st: Add #logPlot example.
+
+2007-11-21  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Support GPInteractiveTerminal options.  Add non-string
+	parameters and pointStyle in particular.  Add GPDataSeriesParms
+	to support smooth parameter.  Add ticlabels support to GPDataSeries.
+	Move GPSmalltalkDataSource>>#asGPDataSource up to GPDataSource.
+	Support multiple data sources within one GPSmalltalkDataSource and
+	support including Strings in it.
+	* 2D.st: Add labels and bubbles plot types.
+	* Examples.st: Add a bubble data series to #fullPlot.
+
+2007-11-19  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Don't fail on printing GPInteractiveTerminal.
+
+2007-11-19  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Don't fail if no plots are present.
+
+2007-11-16  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Base.st: Support multiplots.
+	* Examples.st: Add example.
+
+2007-11-16  Paolo Bonzini  <bonzini@gnu.org>
+
+	* 2D.st: New.
+	* Base.st: New.
+	* Examples.st: New.
+	* Expressions.st: New.
+	* Terminals.st: New.

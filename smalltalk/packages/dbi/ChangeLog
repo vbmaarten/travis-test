@@ -1,0 +1,47 @@
+2011-04-08  Holger Hans Peter Freyther  <zecke@selfish.org>
+
+	* Statement.st: Add Statement class>>#getCommand:.
+
+2010-12-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Remove now superfluous <file> tags.
+
+2010-01-01  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Update copyright years.
+
+2009-11-25  Paolo Bonzini  <bonzini@gnu.org>
+
+	* ResultSet.st: Ugh.
+
+2009-11-25  Paolo Bonzini  <bonzini@gnu.org>
+
+	* ResultSet.st: Print "a ResultSet" for DML results.
+
+2008-09-15  Paolo Bonzini  <bonzini@gnu.org>
+
+	* ConnectionInfo.st: Make db/dbname/database, and host/hostname,
+	synonyms of each other.
+
+2008-02-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Connection.st: Add table accessors.
+	* ResultSet.st: Documentation fix.
+	* Row.st: Add #asArray and #asDictionary.
+	* Table.st: New.
+	* TableColumnInfo.st: New.
+
+2008-02-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* ColumnInfo.st: Improve printing.
+
+2008-02-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* ColumnInfo.st: Add #isNullable.
+	* Connection.st: Add #database.
+
+2008-02-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Connection.st: Add methods to get FieldConverter
+	* FieldConverter.st: New.
+

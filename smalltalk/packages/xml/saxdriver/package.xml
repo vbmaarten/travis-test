@@ -1,0 +1,7 @@
+<package>
+  <name>XML-SAXDriver</name>
+  <namespace>XML</namespace>
+
+  <filein>SAX.st</filein>
+  <filein>Events.st</filein>
+</package>

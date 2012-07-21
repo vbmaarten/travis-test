@@ -1,0 +1,40 @@
+2010-12-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* package.xml: Remove now superfluous <file> tags.
+
+2010-02-19  Paolo Bonzini  <bonzini@gnu.org>
+
+	* FileServer.st: Do not use instance-based exceptions.
+
+2009-08-21  Paolo Bonzini  <bonzini@gnu.org>
+
+	* test.st: Do not use rockBottomPriority.
+
+2008-08-06  Paolo Bonzini  <bonzini@gnu.org>
+
+	* FileServer.st: Do not use #nextHunk.
+
+2008-07-15  Paolo Bonzini  <bonzini@gnu.org>
+
+	* WebServer.st: Use Sockets namespace.
+
+2008-04-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	* FileServer.st: Use new File classes.
+	* WikiServer.st: Likewise.
+
+2008-03-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	* FileServer.st: Use #nextHunk.
+
+2007-10-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	* STT.st: Add brackets around compiled methods.
+
+2007-07-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	* STT.st: Use #compile: on the WriteStream.
+
+2007-07-18  Stephen Compall  <scompall@nocandysw.com>
+
+        * STT.st: Use #compile:.

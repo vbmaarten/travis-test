@@ -1,0 +1,14 @@
+<package>
+  <name>I18N</name>
+  <namespace>I18N</namespace>
+  <prereq>Iconv</prereq>
+
+  <filein>Locale.st</filein>
+  <filein>Expression.st</filein>
+  <filein>GetText.st</filein>
+  <filein>Numbers.st</filein>
+  <filein>Times.st</filein>
+
+  <module>i18n</module>
+  <file>ChangeLog</file>
+</package>

@@ -1,0 +1,12 @@
+<package>
+  <name>ClassPublisher</name>
+  <namespace>STInST</namespace>
+  <prereq>Parser</prereq>
+
+  <filein>Publish.st</filein>
+  <filein>PSFileOut.st</filein>
+  <filein>HTML.st</filein>
+  <filein>Texinfo.st</filein>
+  <file>ChangeLog</file>
+</package>
+

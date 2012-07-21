@@ -1,0 +1,39 @@
+<package>
+  <name>BLOXBrowser</name>
+  <provides>Browser</provides>
+
+  <namespace>BLOX.BLOXBrowser</namespace>
+
+  <start>BLOX.BLOXBrowser.BrowserMain new initialize</start>
+
+  <prereq>Blox</prereq>
+  <prereq>Parser</prereq>
+  <prereq>DebugTools</prereq>
+
+  <filein>Load.st</filein>
+  <filein>GuiData.st</filein>
+  <filein>View.st</filein>
+  <filein>Manager.st</filein>
+  <filein>RadioForm.st</filein>
+  <filein>Menu.st</filein>
+  <filein>ModalDialog.st</filein>
+  <filein>PList.st</filein>
+  <filein>PText.st</filein>
+  <filein>PCode.st</filein>
+  <filein>ButtonForm.st</filein>
+  <filein>BrowShell.st</filein>
+  <filein>BrowserMain.st</filein>
+  <filein>ClassHierBrow.st</filein>
+  <filein>ClassBrow.st</filein>
+  <filein>NamespBrow.st</filein>
+  <filein>MethSetBrow.st</filein>
+  <filein>Inspector.st</filein>
+  <filein>DictInspect.st</filein>
+  <filein>MethInspect.st</filein>
+  <filein>StrcInspect.st</filein>
+  <filein>DebugSupport.st</filein>
+  <filein>Debugger.st</filein>
+  <filein>Notifier.st</filein>
+
+  <file>ChangeLog</file>
+</package>

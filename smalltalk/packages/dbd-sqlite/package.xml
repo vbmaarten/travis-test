@@ -1,0 +1,22 @@
+<package>
+  <name>DBD-SQLite</name>
+  <prereq>DBI</prereq>
+  <namespace>DBI.SQLite</namespace>
+  <module>dbd-sqlite3</module>
+
+  <test>
+    <sunit>DBI.SQLite.SQLiteTestSuite</sunit>
+    <filein>SQLiteTests.st</filein>
+  </test>
+
+  <filein>SQLite.st</filein>
+  <filein>Connection.st</filein>
+  <filein>ResultSet.st</filein>
+  <filein>Statement.st</filein>
+  <filein>Row.st</filein>
+  <filein>ColumnInfo.st</filein>
+  <filein>Table.st</filein>
+  <filein>TableColumnInfo.st</filein>
+
+  <file>ChangeLog</file>
+</package>

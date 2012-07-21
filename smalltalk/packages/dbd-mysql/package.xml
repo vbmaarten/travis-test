@@ -1,0 +1,23 @@
+<package>
+  <name>DBD-MySQL</name>
+  <namespace>DBI.MySQL</namespace>
+  <prereq>DBI</prereq>
+  <prereq>Sockets</prereq>
+  <prereq>Digest</prereq>
+
+  <filein>Column.st</filein>
+  <filein>Connection.st</filein>
+  <filein>Extensions.st</filein>
+  <filein>ResultSet.st</filein>
+  <filein>Row.st</filein>
+  <filein>Statement.st</filein>
+  <filein>Table.st</filein>
+  <filein>TableColumnInfo.st</filein>
+
+  <test>
+    <sunit>DBI.MySQL.DBIMySQLTestSuite</sunit>
+    <filein>MySQLTests.st</filein>
+  </test>
+
+  <file>ChangeLog</file>
+</package>

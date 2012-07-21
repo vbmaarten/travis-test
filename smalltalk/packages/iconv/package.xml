@@ -1,0 +1,14 @@
+<package>
+  <name>Iconv</name>
+  <namespace>I18N</namespace>
+
+  <test>
+    <sunit>I18N.IconvTest</sunit>
+    <filein>iconvtests.st</filein>
+  </test>
+
+  <filein>Sets.st</filein>
+  <filein>UTF7.st</filein>
+
+  <module>iconv</module>
+</package>

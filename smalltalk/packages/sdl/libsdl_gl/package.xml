@@ -1,0 +1,9 @@
+<package>
+  <name>LibSDL_GL</name>
+  <namespace>SDL</namespace>
+
+  <prereq>LibSDL</prereq>
+  <prereq>OpenGL</prereq>
+
+  <filein>Display.st</filein>
+</package>

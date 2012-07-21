@@ -1,0 +1,15 @@
+<package>
+  <name>BloxTK</name>
+  <namespace>BLOX</namespace>
+  <provides>Blox</provides>
+
+  <filein>BloxBasic.st</filein>
+  <filein>BloxWidgets.st</filein>
+  <filein>BloxText.st</filein>
+  <filein>BloxCanvas.st</filein>
+  <filein>BloxExtend.st</filein>
+  <filein>Blox.st</filein>
+  <module>blox-tk</module>
+
+  <file>ChangeLog</file>
+</package>

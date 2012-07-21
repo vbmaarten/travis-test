@@ -1,0 +1,10 @@
+<package>
+  <name>LibSDL_sound</name>
+  <namespace>SDL</namespace>
+
+  <filein>SDL_audio.st</filein>
+  <filein>SDL_cdrom.st</filein>
+  <filein>SDL_sound.st</filein>
+
+  <library>libSDL_sound</library>
+</package>

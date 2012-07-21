@@ -1,0 +1,150 @@
+
+Execution begins...
+returned value is 32
+compiler.st:45: undefined variable undefVariable referenced
+
+Execution begins...
+returned value is Array new: 3 "<0>"
+
+Execution begins...
+returned value is 'bar'
+
+Execution begins...
+returned value is 100
+
+Execution begins...
+returned value is 1
+
+Execution begins...
+returned value is Message
+
+Execution begins...
+returned value is #test
+
+Execution begins...
+returned value is Array new: 0 "<0>"
+
+Execution begins...
+returned value is 1
+
+Execution begins...
+returned value is Message
+
+Execution begins...
+returned value is #test:
+
+Execution begins...
+returned value is Array new: 1 "<0>"
+
+Execution begins...
+returned value is 1
+
+Execution begins...
+returned value is Message
+
+Execution begins...
+returned value is #primitive:
+
+Execution begins...
+returned value is Array new: 1 "<0>"
+
+Execution begins...
+returned value is 2
+compiler.st:182: parse error, expected '!'
+ error: did not understand #<
+compiler.st:186: expected object
+
+Execution begins...
+returned value is 2
+
+Execution begins...
+returned value is 'No crashes'
+
+Execution begins...
+a Smalltalk string:1: undefined variable a referenced
+returned value is nil
+
+Execution begins...
+ error: did not understand #gotcha
+returned value is nil
+
+Execution begins...
+returned value is 'nineteen'
+
+Execution begins...
+returned value is 'ABC'
+
+Execution begins...
+returned value is 0
+
+Execution begins...
+returned value is 0
+
+Execution begins...
+returned value is 0
+
+Execution begins...
+returned value is 0
+
+Execution begins...
+returned value is 0
+
+Execution begins...
+returned value is 0.00000
+
+Execution begins...
+returned value is '-123.000s3'
+
+Execution begins...
+a Smalltalk string:1: parse error, expected positive numeric literal
+returned value is nil
+
+Execution begins...
+a Smalltalk string:1: parse error, expected positive numeric literal
+returned value is nil
+
+Execution begins...
+a Smalltalk string:1: parse error, expected positive numeric literal
+returned value is nil
+
+Execution begins...
+a Smalltalk string:1: parse error, expected positive numeric literal
+returned value is nil
+
+Execution begins...
+returned value is FileSegment
+
+Execution begins...
+returned value is String
+compiler.st:321: class method expected inside class block
+
+Execution begins...
+returned value is CompiledMethod new: 0 "<0>"
+
+Execution begins...
+ error: Invalid argument #a: key not found
+returned value is nil
+
+Execution begins...
+returned value is true
+
+Execution begins...
+returned value is #A
+
+Execution begins...
+returned value is A
+
+Execution begins...
+returned value is #A
+({Subspace.B} )
+
+Execution begins...
+returned value is VariableBinding new "<0>"
+
+Execution begins...
+returned value is Array new: 1 "<0>"
+
+Execution begins...
+'abc'
+'def'
+returned value is ReadStream new "<0>"
